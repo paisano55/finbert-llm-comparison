@@ -3,12 +3,12 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 from pathlib import Path
 
 import torch
 
 from .benchmark import run_benchmark
+from .env import load_openai_api_key
 from .types import BenchmarkConfig
 
 
@@ -34,6 +34,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--openai-batch-size", type=int, default=16)
     parser.add_argument("--openai-max-retries", type=int, default=3)
     parser.add_argument("--openai-retry-base-seconds", type=float, default=1.0)
+    parser.add_argument(
+        "--openai-env-file",
+        default=".env",
+        help="OpenAI API 키를 읽을 env 파일 경로",
+    )
     parser.add_argument("--output-path", default="outputs/benchmark_result.json")
     parser.add_argument(
         "--allow-openai-data-transfer",
@@ -47,8 +52,7 @@ def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
 
-    if not os.environ.get("OPENAI_API_KEY"):
-        raise OSError("OPENAI_API_KEY 환경변수가 필요합니다.")
+    load_openai_api_key(Path(args.openai_env_file))
     if not args.allow_openai_data_transfer:
         raise OSError(
             "OpenAI 비교 실행은 문장 텍스트를 외부(OpenAI)로 전송합니다. "

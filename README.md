@@ -22,14 +22,23 @@
 
 1. OpenAI API Key 설정
 
+프로젝트 루트의 `.env` 파일을 사용합니다.
+
 ```bash
-set OPENAI_API_KEY=your_api_key_here
+OPEN_API_KEY=your_api_key_here
 ```
 
-PowerShell:
+`OPENAI_API_KEY` 이름으로 적어도 동작합니다.
 
-```powershell
-$env:OPENAI_API_KEY="your_api_key_here"
+다른 파일명을 쓰고 싶으면 실행 시 `--openai-env-file` 로 지정할 수 있습니다.
+
+예시:
+
+```bash
+uv run fin-sentiment-benchmark \
+  --openai-env-file .secrets/openai.env \
+  --openai-model gpt-4o-mini \
+  --allow-openai-data-transfer
 ```
 
 2. CUDA 환경에서 `torch`가 GPU 빌드로 설치되어 있는지 확인
