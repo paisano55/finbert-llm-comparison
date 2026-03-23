@@ -42,6 +42,7 @@ class BenchmarkConfig:
     dataset_config: str = "sentences_50agree"
     fallback_sample_size: int = 1000
     fallback_seed: int = 42
+    run_target: Literal["both", "finbert", "openai"] = "both"
     finbert_model_name: str = "ProsusAI/finbert"
     finbert_batch_size: int = 64
     openai_model_name: str = "gpt-4o-mini"
@@ -53,12 +54,14 @@ class BenchmarkConfig:
 @dataclass(frozen=True)
 class BenchmarkReport:
     dataset: DatasetInfo
-    finbert: dict[str, float | str]
-    openai: dict[str, float | str | int]
+    run_target: Literal["both", "finbert", "openai"]
+    finbert: dict[str, float | str] | None
+    openai: dict[str, float | str | int] | None
 
     def to_dict(self) -> dict[str, object]:
         return {
             "dataset": asdict(self.dataset),
+            "run_target": self.run_target,
             "finbert": self.finbert,
             "openai": self.openai,
         }

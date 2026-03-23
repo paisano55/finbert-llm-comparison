@@ -1,0 +1,17 @@
+{
+  "dataset": {
+    "source": "takala/financial_phrasebank:data/FinancialPhraseBank-v1.0.zip",
+    "config": "sentences_50agree",
+    "strategy": "finbert_method_equivalent_test_split_20pct_random_state_0",
+    "split": "test",
+    "size": 970
+  },
+  "run_target": "finbert",
+  "finbert": {
+    "model": "ProsusAI/finbert",
+    "accuracy": 0.8422680412371134,
+    "macro_f1": 0.8339893165180038,
+    "elapsed_seconds": 1.4921532999978808
+  },
+  "openai": null
+}

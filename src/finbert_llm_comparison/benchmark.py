@@ -29,30 +29,31 @@ def run_benchmark(config: BenchmarkConfig, output_path: Path) -> BenchmarkReport
     )
     gold: list[SentimentLabel] = [record.label for record in records]
 
-    finbert_runner = FinBERTSentimentRunner(
-        model_name=config.finbert_model_name,
-        batch_size=config.finbert_batch_size,
-    )
-    finbert_result = finbert_runner.predict(records)
-    finbert_metrics = _metrics(gold=gold, pred=finbert_result.predictions)
-
-    openai_runner = OpenAIBatchSentimentRunner(
-        model_name=config.openai_model_name,
-        batch_size=config.openai_batch_size,
-        max_retries=config.openai_max_retries,
-        retry_base_seconds=config.openai_retry_base_seconds,
-    )
-    openai_result = openai_runner.predict(records)
-    openai_metrics = _metrics(gold=gold, pred=openai_result.predictions)
-
-    report = BenchmarkReport(
-        dataset=dataset_info,
-        finbert={
+    finbert_report: dict[str, float | str] | None = None
+    if config.run_target in {"both", "finbert"}:
+        finbert_runner = FinBERTSentimentRunner(
+            model_name=config.finbert_model_name,
+            batch_size=config.finbert_batch_size,
+        )
+        finbert_result = finbert_runner.predict(records)
+        finbert_metrics = _metrics(gold=gold, pred=finbert_result.predictions)
+        finbert_report = {
             "model": config.finbert_model_name,
             **finbert_metrics,
             "elapsed_seconds": finbert_result.elapsed_seconds,
-        },
-        openai={
+        }
+
+    openai_report: dict[str, float | str | int] | None = None
+    if config.run_target in {"both", "openai"}:
+        openai_runner = OpenAIBatchSentimentRunner(
+            model_name=config.openai_model_name,
+            batch_size=config.openai_batch_size,
+            max_retries=config.openai_max_retries,
+            retry_base_seconds=config.openai_retry_base_seconds,
+        )
+        openai_result = openai_runner.predict(records)
+        openai_metrics = _metrics(gold=gold, pred=openai_result.predictions)
+        openai_report = {
             "model": config.openai_model_name,
             **openai_metrics,
             "elapsed_seconds": openai_result.elapsed_seconds,
@@ -61,7 +62,13 @@ def run_benchmark(config: BenchmarkConfig, output_path: Path) -> BenchmarkReport
             if openai_result.usage
             else 0,
             "total_tokens": openai_result.usage.total_tokens if openai_result.usage else 0,
-        },
+        }
+
+    report = BenchmarkReport(
+        dataset=dataset_info,
+        run_target=config.run_target,
+        finbert=finbert_report,
+        openai=openai_report,
     )
 
     output_path.parent.mkdir(parents=True, exist_ok=True)

@@ -28,10 +28,16 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--dataset-config", default="sentences_50agree")
     parser.add_argument("--fallback-sample-size", type=int, default=1000)
     parser.add_argument("--fallback-seed", type=int, default=42)
+    parser.add_argument(
+        "--run-target",
+        choices=["both", "finbert", "openai"],
+        default="both",
+        help="실행 대상 선택",
+    )
     parser.add_argument("--finbert-model", default="ProsusAI/finbert")
-    parser.add_argument("--finbert-batch-size", type=int, default=64)
-    parser.add_argument("--openai-model", default="gpt-4o-mini")
-    parser.add_argument("--openai-batch-size", type=int, default=16)
+    parser.add_argument("--finbert-batch-size", type=int, default=10)
+    parser.add_argument("--openai-model", default="gpt-5.4")
+    parser.add_argument("--openai-batch-size", type=int, default=10)
     parser.add_argument("--openai-max-retries", type=int, default=3)
     parser.add_argument("--openai-retry-base-seconds", type=float, default=1.0)
     parser.add_argument(
@@ -52,29 +58,32 @@ def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
 
-    load_openai_api_key(Path(args.openai_env_file))
-    if not args.allow_openai_data_transfer:
+    if args.run_target in {"both", "openai"}:
+        load_openai_api_key(Path(args.openai_env_file))
+    if args.run_target in {"both", "openai"} and not args.allow_openai_data_transfer:
         raise OSError(
             "OpenAI 비교 실행은 문장 텍스트를 외부(OpenAI)로 전송합니다. "
             "동의 시 --allow-openai-data-transfer 플래그를 추가하세요."
         )
 
-    if args.finbert_batch_size <= 0:
+    if args.run_target in {"both", "finbert"} and args.finbert_batch_size <= 0:
         raise ValueError("--finbert-batch-size 는 1 이상이어야 합니다.")
-    if args.openai_batch_size <= 0:
+    if args.run_target in {"both", "openai"} and args.openai_batch_size <= 0:
         raise ValueError("--openai-batch-size 는 1 이상이어야 합니다.")
-    if args.openai_max_retries < 1:
+    if args.run_target in {"both", "openai"} and args.openai_max_retries < 1:
         raise ValueError("--openai-max-retries 는 1 이상이어야 합니다.")
 
-    print(f"CUDA available: {torch.cuda.is_available()}")
-    if torch.cuda.is_available():
-        print(f"CUDA device: {torch.cuda.get_device_name(0)}")
+    if args.run_target in {"both", "finbert"}:
+        print(f"CUDA available: {torch.cuda.is_available()}")
+        if torch.cuda.is_available():
+            print(f"CUDA device: {torch.cuda.get_device_name(0)}")
 
     config = BenchmarkConfig(
         dataset_mode=args.dataset_mode,
         dataset_config=args.dataset_config,
         fallback_sample_size=args.fallback_sample_size,
         fallback_seed=args.fallback_seed,
+        run_target=args.run_target,
         finbert_model_name=args.finbert_model,
         finbert_batch_size=args.finbert_batch_size,
         openai_model_name=args.openai_model,
